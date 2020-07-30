@@ -1,0 +1,6 @@
+module Pods_UniSAFE {
+  umbrella header "Pods-UniSAFE-umbrella.h"
+
+  export *
+  module * { export * }
+}
