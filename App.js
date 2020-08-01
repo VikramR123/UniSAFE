@@ -1,24 +1,97 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, Platform, Button, TouchableOpacity } from 'react-native';
+import MapView from 'react-native-maps';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+
+
 
 const { width, height } = Dimensions.get('screen'); 
 
 export default function App() {
   const [active, setActive] = useState("second");
+  const [crimeSpots, setCrimeSpots] = useState([]);
+
+ 
+
+  const postLoc = () => {
+    fetch('https://unisafe-44526.firebaseio.com/places.json', {
+      method: 'POST',
+      body: JSON.stringify({
+        latitude: 33.6405,
+        longitude: -117.8443
+      })
+    })
+  }
+
+
+  const getUserPlacesHandler = () => {
+    fetch('https://unisafe-44526.firebaseio.com/places.json')
+      .then(res => res.json())
+      .then(parsedRes => {
+        const placesArray = [];
+        for (const key in parsedRes) {
+          placesArray.push({
+            latitude: parsedRes[key].latitude,
+            longitude: parsedRes[key].longitude,
+            id: key
+          });
+        }
+        setCrimeSpots(placesArray);
+        //console.log("Places array: ", placesArray)
+      })
+      .catch(err => console.log(err));
+  };
+
+
+  const crimeSpotLists = crimeSpots.map(userPlace => <MapView.Marker coordinate={userPlace} key={userPlace.id}/>)
 
   function returnView() {
     if (active == "first") {
       return(
-        <View style={styles.bottomView}>
+        <View style={[styles.bottomView, {alignItems: 'center'}]}>
           <Text> First Screen </Text>
+
+          <View style={{backgroundColor: 'white', borderRadius: 10, width: width * 0.7, margin: 10}}>
+            <Text> Someone 1     X Trips</Text>
+          </View>
+          <View style={{backgroundColor: 'white', borderRadius: 10, width: width * 0.7, margin: 10}}>
+            <Text> Someone 2     X Trips</Text>
+          </View>
+          <View style={{backgroundColor: 'white', borderRadius: 10, width: width * 0.7, margin: 10}}>
+            <Text> Someone 3     X Trips</Text>
+          </View>
+
         </View>  
       )
     }
     else if (active == "second") {
       return(
         <View style={styles.bottomView}>
-          <Text> Second Screen </Text>
+          
+          <MapView
+                style={styles.map}
+                enableZoomControl={true}
+                // showsUserLocation = {true}
+                showsMyLocationButton = {true}
+                zoomEnabled = {true}
+                initalRegion={{
+                    // UC Irvine
+                    latitude: 33.6405,
+                    longitude: -117.8443,
+                    latitudeDelta: 0.00422,
+                    longitudeDelta: 0.00121,
+                }}
+                region={{
+                  latitude: 33.6405,
+                    longitude: -117.8443,
+                    latitudeDelta: 0.0422,
+                    longitudeDelta: 0.0121,
+                }}>
+                    {/* {searchLocMarker}
+                    {usersMarkers} */}
+                    {crimeSpotLists}
+            </MapView>
         </View>  
       )
     }
@@ -26,6 +99,10 @@ export default function App() {
       return(
         <View style={styles.bottomView}>
           <Text> Third Screen </Text>
+          <Button title="post loc" onPress={postLoc}/>
+          <Button title="Show crime spots" onPress={getUserPlacesHandler}/>
+
+          <Ionicons name="md-checkmark-circle" size={32} color="green" />
         </View>  
       )
     }
@@ -39,28 +116,30 @@ export default function App() {
       </View>
 
       <View style={styles.header}>
-        <Text style={{color: 'white', alignSelf: 'center', fontSize: 26, top: 5}}> UniSAFE </Text>
+        <Text style={{color: 'white', alignSelf: 'center', fontSize: 28, fontWeight: 'bold', top: 15}}> UniSAFE </Text>
       </View>
 
       <View style={styles.tabs}>
-        <View style={[
+        <TouchableOpacity onPress={() => setActive("first")} style={[
           styles.tab,
           (active === 'first' ? styles.activeTab : null)
           ]}>
-          <Text onPress={() => setActive("first")}> Buddies </Text>
-        </View>
-        <View style={[
+          <FontAwesome5 name="user-friends" size={32} color={active === "first" ? "orange" : "#001149"} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setActive("second")} style={[
           styles.tab,
           (active === 'second' ? styles.activeTab : null)
           ]}>
-          <Text onPress={() => setActive("second")}> Map </Text>
-        </View>
-        <View style={[
+          <FontAwesome5 name="map-marked-alt" size={32} color={active === "second" ? "orange" : "#001149"} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setActive("third")} style={[
           styles.tab,
           (active === 'third' ? styles.activeTab : null)
           ]}>
-          <Text onPress={() => setActive("third")}> Emergency </Text>
-        </View>
+          <Ionicons name="ios-notifications" size={32} color={active === "third" ? "orange" : "#001149"} />
+        </TouchableOpacity>
       </View>
 
       {returnView()}
@@ -86,7 +165,7 @@ const styles = StyleSheet.create({
     //flex: 1,
     position: 'absolute',
     top: (Platform.OS === 'ios') ? 18 : 24,
-    backgroundColor: '#001149',
+    backgroundColor: '#001149', // The blue for the app
     width: width,
     height: height * 0.08,
   },
@@ -122,5 +201,8 @@ const styles = StyleSheet.create({
     width: width,
     height: (Platform.OS === 'ios') ? height - (height * 0.14 + 18) : height - (height * 0.14 + 24),
     backgroundColor: 'lavender',
-  }
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
 });
